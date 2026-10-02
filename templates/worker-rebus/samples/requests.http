@@ -1,0 +1,74 @@
+# Send messages to the worker by hand (VS Code REST Client or Visual Studio), through RabbitMQ's management API.
+# Start the stack first (F5, or the "deps: up" task). RabbitMQ management login: guest / guest.
+#
+# Rebus decides what a message is from its headers, so each request below sets them:
+#   rbs2-msg-type      the .NET type name of the contract: "<full type name>, <assembly name>"
+#   rbs2-content-type  how the body is serialized
+#   rbs2-msg-id        any unique id
+# The assembly name after the comma is the project name: change both parts if you rename the project.
+@rabbit = http://localhost:15672
+@auth = Basic Z3Vlc3Q6Z3Vlc3Q=
+
+### COMMAND: send "import this order" straight to the worker's input queue ("worker").
+# The default exchange (amq.default) routes by queue name. The orders API (http://localhost:5080) must be running.
+POST {{rabbit}}/api/exchanges/%2F/amq.default/publish
+Authorization: {{auth}}
+Content-Type: application/json
+
+{
+  "routing_key": "worker",
+  "properties": {
+    "delivery_mode": 2,
+    "headers": {
+      "rbs2-msg-type": "Company.Product.Worker.Handlers.Models.ImportOrderCommand, Company.Product.Worker",
+      "rbs2-content-type": "application/json;charset=utf-8",
+      "rbs2-msg-id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  "payload": "{\"reference\":\"B-3001\",\"customerName\":\"Northwind\",\"lines\":[{\"sku\":\"WIDGET-1\",\"quantity\":2,\"unitPrice\":25.00}]}",
+  "payload_encoding": "string"
+}
+
+### COMMAND that fails validation: no lines. It lands in the "error" queue after ONE attempt (fail fast).
+POST {{rabbit}}/api/exchanges/%2F/amq.default/publish
+Authorization: {{auth}}
+Content-Type: application/json
+
+{
+  "routing_key": "worker",
+  "properties": {
+    "delivery_mode": 2,
+    "headers": {
+      "rbs2-msg-type": "Company.Product.Worker.Handlers.Models.ImportOrderCommand, Company.Product.Worker",
+      "rbs2-content-type": "application/json;charset=utf-8",
+      "rbs2-msg-id": "22222222-2222-2222-2222-222222222222"
+    }
+  },
+  "payload": "{\"reference\":\"B-3002\",\"customerName\":\"\",\"lines\":[]}",
+  "payload_encoding": "string"
+}
+
+### EVENT: the same OrderPlacedEvent a publisher would send, straight to the queue (an existing order id; unknown ids are logged and dropped).
+POST {{rabbit}}/api/exchanges/%2F/amq.default/publish
+Authorization: {{auth}}
+Content-Type: application/json
+
+{
+  "routing_key": "worker",
+  "properties": {
+    "delivery_mode": 2,
+    "headers": {
+      "rbs2-msg-type": "Company.Product.Worker.Handlers.Models.OrderPlacedEvent, Company.Product.Worker",
+      "rbs2-content-type": "application/json;charset=utf-8",
+      "rbs2-msg-id": "33333333-3333-3333-3333-333333333333"
+    }
+  },
+  "payload": "{\"orderId\":\"0192f0a0-0000-7000-8000-000000000001\"}",
+  "payload_encoding": "string"
+}
+
+### Health and metrics of the worker (F5 port)
+GET http://localhost:5100/health
+
+###
+GET http://localhost:5100/metrics

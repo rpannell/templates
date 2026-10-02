@@ -1,0 +1,13 @@
+# Dapr sidecar configuration: send the sidecar's traces to the same OpenTelemetry endpoint as the app, so each
+# run's trace starts at the sidecar's cron trigger.
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: scheduler-config
+spec:
+  tracing:
+    samplingRate: "1"
+    otel:
+      endpointAddress: "dashboard:18889"
+      isSecure: false
+      protocol: grpc

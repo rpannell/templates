@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: events
+spec:
+  type: pubsub.gcp.pubsub
+  version: v1
+  metadata:
+    - name: projectId
+      value: "<project-id>"
+    # Credentials come from GKE Workload Identity when no key file is set.
+    - name: maxDeliveryAttempts
+      value: "5"
+    - name: deadLetterTopic
+      value: "worker-dead-letters"

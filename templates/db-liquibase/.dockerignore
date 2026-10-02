@@ -1,0 +1,6 @@
+.git/
+.vscode/
+**/*.csv
+docker-compose.yml
+README.md
+CLAUDE.md

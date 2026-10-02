@@ -1,0 +1,104 @@
+# The worker: a Deployment that KEDA scales on the RabbitMQ queue backlog (like Azure Functions).
+#
+#   kubectl apply -n <namespace> -f deploy/kubernetes/worker.yaml
+#
+# Needs KEDA on the cluster (https://keda.sh) and the secret below. All replicas read the SAME queue, so each
+# message goes to exactly one of them. Do NOT put timers or schedules in this worker: they would fire once per replica.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: product-worker-rabbitmq
+type: Opaque
+stringData:
+  # amqp://user:password@host:5672 -- replace, and prefer your secret manager (External Secrets, Sealed Secrets, CSI driver).
+  connectionString: "amqp://guest:guest@rabbitmq:5672"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-worker
+  labels: { app: product-worker }
+spec:
+  # KEDA owns the replica count once the ScaledObject below exists.
+  replicas: 1
+  selector:
+    matchLabels: { app: product-worker }
+  template:
+    metadata:
+      labels: { app: product-worker }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      # Longer than Messaging__WorkerShutdownTimeout (30s) plus the host's grace (5s): in-flight messages finish
+      # before the pod is killed during a rollout or scale-down.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: worker
+          image: <registry>/company-product-worker:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: Messaging__InputQueue
+              value: worker
+            - name: Messaging__ErrorQueue
+              value: error
+            - name: Messaging__MaxParallelism
+              value: "8"
+            - name: Messaging__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: product-worker-rabbitmq
+                  key: connectionString
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.observability:4317"
+            - name: OTEL_SERVICE_NAME
+              value: "product-worker"
+            # Service discovery: "orders-api" resolves through cluster DNS when the Service has that name.
+            # Otherwise point it at the right host:
+            # - name: Services__orders-api__http__0
+            #   value: "http://product-api:8080"
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 384Mi }
+---
+# KEDA reads the connection string from this secret to measure the queue.
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: product-worker-rabbitmq
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: product-worker-rabbitmq
+      key: connectionString
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: product-worker
+spec:
+  scaleTargetRef:
+    name: product-worker
+  # Keep 1 until the queue and its event bindings exist: Rebus creates them when a replica first starts, and an
+  # event published before that has nowhere to go. Once the worker has run once, 0 is safe: the broker keeps the
+  # messages while no pod runs, and KEDA starts a pod when the queue has a backlog.
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  cooldownPeriod: 300
+  triggers:
+    - type: rabbitmq
+      authenticationRef:
+        name: product-worker-rabbitmq
+      metadata:
+        protocol: amqp
+        queueName: worker       # Messaging__InputQueue
+        mode: QueueLength
+        value: "20"             # target messages waiting per replica

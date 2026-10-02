@@ -1,0 +1,21 @@
+# Run a job by hand, exactly the way the Dapr sidecar does when a schedule fires (a POST to the job's route).
+# Start the scheduler first (F5). The orders API should be running on http://localhost:5080.
+@scheduler = http://localhost:5200
+
+### Run the daily sales summary now
+POST {{scheduler}}/jobs/daily-sales-summary
+
+### Run the orders API health check now
+POST {{scheduler}}/jobs/orders-api-health
+
+### Send the same job twice quickly to see overlap protection: the second call answers "skipped" if the first is still running
+POST {{scheduler}}/jobs/daily-sales-summary
+
+### The OPTIONS probe the sidecar sends at startup, to confirm the route exists
+OPTIONS {{scheduler}}/jobs/daily-sales-summary
+
+### Health and metrics (jobs_runs_total, jobs_duration_seconds, dependency_checks_total)
+GET {{scheduler}}/health
+
+###
+GET {{scheduler}}/metrics

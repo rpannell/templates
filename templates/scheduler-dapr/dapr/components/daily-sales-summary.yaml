@@ -1,0 +1,25 @@
+# Schedule for DailySalesSummaryJob. LOCAL DEVELOPMENT: runs every minute so you can watch it work.
+# Production schedule (06:00 UTC daily) is in deploy/kubernetes/components.yaml.
+#
+# Format: 6 fields WITH SECONDS    ┌ second (0-59)
+#                                  │ ┌ minute (0-59)
+#                                  │ │ ┌ hour (0-23)
+#                                  │ │ │ ┌ day of month (1-31)
+#                                  │ │ │ │ ┌ month (1-12 or JAN-DEC)
+#                                  │ │ │ │ │ ┌ day of week (0-6 or SUN-SAT)
+#                                  0 0 6 * * *        = 06:00:00 every day
+# Or a shortcut: @every 30s | @every 15m | @every 1h | @hourly | @daily | @weekly | @monthly
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: daily-sales-summary
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+    - name: schedule
+      value: "@every 1m"
+    - name: direction
+      value: "input"
+    - name: route                      # must match DailySalesSummaryJob.Route
+      value: "/jobs/daily-sales-summary"

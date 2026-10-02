@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    "redhat.vscode-xml",
+    "ms-azuretools.vscode-containers"
+  ]
+}

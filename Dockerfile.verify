@@ -1,0 +1,48 @@
+# syntax=docker/dockerfile:1
+# check=error=true
+# Proves the templates work as generated, not just as source:
+# pack -> install -> dotnet new -> build -> test.
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+
+WORKDIR /repo
+COPY . .
+RUN dotnet pack CodingTemplates.csproj -c Release -o /packages \
+ && dotnet new install /packages/CodingTemplates.*.nupkg
+
+WORKDIR /verify
+
+# iDesign API: generate with a different name so every sourceName replacement is exercised.
+RUN dotnet new idesign-api -n Acme.Sales -o Acme.Sales \
+ && cd Acme.Sales \
+ && ! grep -rIl "Company.Product" . \
+ && dotnet build -c Release \
+ && dotnet test -c Release --no-build
+
+# Dapr worker: generate with a different name, build and run every test.
+RUN dotnet new worker-dapr -n Acme.Sales.Worker -o Acme.Sales.Worker \
+ && cd Acme.Sales.Worker \
+ && ! grep -rIl "Company.Product.Worker" . \
+ && dotnet build -c Release \
+ && dotnet test -c Release --no-build
+
+# Rebus worker: generate with a different name, build and run every test.
+# (Same default sourceName as worker-dapr, so grep for the placeholder: nothing may be left behind.)
+RUN dotnet new worker-rebus -n Acme.Sales.RebusWorker -o Acme.Sales.RebusWorker \
+ && cd Acme.Sales.RebusWorker \
+ && ! grep -rIl "Company.Product.Worker" . \
+ && dotnet build -c Release \
+ && dotnet test -c Release --no-build
+
+# Dapr scheduler: generate with a different name, build and run every test.
+RUN dotnet new scheduler-dapr -n Acme.Sales.Scheduler -o Acme.Sales.Scheduler \
+ && cd Acme.Sales.Scheduler \
+ && ! grep -rIl "Company.Product.Scheduler" . \
+ && dotnet build -c Release \
+ && dotnet test -c Release --no-build
+
+# Liquibase database: generate and check the placeholder name was replaced everywhere.
+# (The migration image itself is built and round-trip tested by the CI workflow.)
+RUN dotnet new db-liquibase -n Acme.Sales.Database -o Acme.Sales.Database \
+ && cd Acme.Sales.Database \
+ && ! grep -rIl "Company.Product.Database" . \
+ && test -f changelog/changelog.xml

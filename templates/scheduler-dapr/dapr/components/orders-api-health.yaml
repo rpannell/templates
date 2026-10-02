@@ -1,0 +1,16 @@
+# Schedule for OrdersApiHealthJob. LOCAL DEVELOPMENT: every 30 seconds.
+# Production schedule (every 5 minutes) is in deploy/kubernetes/components.yaml.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: orders-api-health
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+    - name: schedule
+      value: "@every 30s"
+    - name: direction
+      value: "input"
+    - name: route                      # must match OrdersApiHealthJob.Route
+      value: "/jobs/orders-api-health"

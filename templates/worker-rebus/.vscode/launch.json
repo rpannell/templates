@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Worker + RabbitMQ (Docker)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "deps up + build",
+      "program": "${workspaceFolder}/src/Company.Product.Worker/bin/Debug/net10.0/Company.Product.Worker.dll",
+      "cwd": "${workspaceFolder}/src/Company.Product.Worker",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5100"
+      }
+    },
+    {
+      "name": "Worker only (dependencies already running)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Company.Product.Worker/bin/Debug/net10.0/Company.Product.Worker.dll",
+      "cwd": "${workspaceFolder}/src/Company.Product.Worker",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5100"
+      }
+    },
+    {
+      "name": "Attach to process",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
+}

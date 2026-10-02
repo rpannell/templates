@@ -1,0 +1,19 @@
+# GCS bucket -> Pub/Sub notification (OBJECT_FINALIZE, JSON payload) -> subscription -> this binding.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: object-created
+spec:
+  type: bindings.gcp.pubsub
+  version: v1
+  metadata:
+    - name: projectId
+      value: "<project-id>"
+    - name: topic
+      value: "object-created"
+    - name: subscription
+      value: "worker-object-created"
+    - name: direction
+      value: "input"
+    - name: route
+      value: "/functions/object-created"

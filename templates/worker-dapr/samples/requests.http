@@ -1,0 +1,45 @@
+# Trigger each function by hand through the local Dapr sidecar (VS Code REST Client or Visual Studio).
+# Start the stack first (F5, or the "deps: up" task). The orders API should be running on http://localhost:5080.
+@dapr = http://localhost:3500
+
+### EVENT: publish order-placed to the "events" pub/sub component (RabbitMQ locally).
+# Use an order id that exists in the orders API; unknown ids are logged and dropped.
+POST {{dapr}}/v1.0/publish/events/order-placed
+Content-Type: application/json
+
+{ "orderId": "0192f0a0-0000-7000-8000-000000000001" }
+
+### FILE (object storage), step 1: put a file into the local object store.
+POST {{dapr}}/v1.0/bindings/object-storage
+Content-Type: application/json
+
+{
+  "operation": "create",
+  "data": "order_ref,customer_name,sku,quantity,unit_price\nB-3001,Northwind,WIDGET-1,2,25.00\n",
+  "metadata": { "fileName": "orders-3001.csv" }
+}
+
+### FILE (object storage), step 2: send the "object created" notification (S3 format), as S3 -> SQS would.
+POST {{dapr}}/v1.0/bindings/object-created
+Content-Type: application/json
+
+{
+  "operation": "create",
+  "data": {
+    "Records": [
+      {
+        "eventName": "ObjectCreated:Put",
+        "s3": { "bucket": { "name": "local" }, "object": { "key": "orders-3001.csv", "size": 70 } }
+      }
+    ]
+  }
+}
+
+### FILE (drop folder): no request needed. Copy samples/orders.csv into drop/incoming/.
+# It moves to drop/processed/ (or drop/failed/ with an .error.txt for samples/orders-invalid.csv).
+
+### Health and metrics of the worker (F5 port)
+GET http://localhost:5100/health
+
+###
+GET http://localhost:5100/metrics

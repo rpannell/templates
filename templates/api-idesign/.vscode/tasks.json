@@ -1,0 +1,73 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/Company.Product.slnx",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["test", "${workspaceFolder}/Company.Product.slnx"],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "deps: up",
+      "detail": "Start Postgres, OpenTelemetry Collector, Prometheus, Grafana (:3000) and the Aspire dashboard (:18888) in Docker",
+      "type": "shell",
+      "command": "docker compose up -d --wait db otel-collector prometheus grafana dashboard",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "deps: down",
+      "detail": "Stop the local dependencies (database and metrics data are kept)",
+      "type": "shell",
+      "command": "docker compose down",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "db: reset",
+      "detail": "Delete the database and metrics volumes, then recreate the database from database/schema.sql",
+      "type": "shell",
+      "command": "docker compose down -v; docker compose up -d --wait db otel-collector prometheus grafana dashboard",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "deps up + build",
+      "dependsOrder": "sequence",
+      "dependsOn": ["deps: up", "build"],
+      "problemMatcher": []
+    },
+    {
+      "label": "compose: up (full stack)",
+      "detail": "Run the whole stack in Docker on http://localhost:8080",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "docker: build + test",
+      "detail": "Same build the CI runs: compile, all tests, runtime image",
+      "type": "shell",
+      "command": "docker build -t company-product-api .",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}

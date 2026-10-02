@@ -1,0 +1,24 @@
+# FILE source for ObjectCreatedFunction: "object created" notifications.
+# In the cloud, object storage publishes these (S3 -> SQS, Blob Storage -> Event Grid -> Service Bus, GCS -> Pub/Sub);
+# see dapr/examples/. Locally the notification is a message on a RabbitMQ queue, and the output direction lets
+# samples/requests.http send one through the sidecar.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: object-created
+spec:
+  type: bindings.rabbitmq
+  version: v1
+  metadata:
+    - name: host
+      value: "amqp://guest:guest@rabbitmq:5672"
+    - name: queueName
+      value: "object-created"
+    - name: durable
+      value: "true"
+    - name: deleteWhenUnused
+      value: "false"
+    - name: direction
+      value: "input, output"
+    - name: route
+      value: "/functions/object-created"

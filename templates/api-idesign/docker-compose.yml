@@ -1,0 +1,99 @@
+# Local development stack. Every component is open source and runs the same on any cloud or on-prem;
+# the API only speaks OTLP to the OpenTelemetry Collector, which decides where telemetry goes.
+#
+#   API ──OTLP──▶ otel-collector ──▶ prometheus (metrics) ──▶ grafana (dashboards)
+#                                └─▶ dashboard  (logs, traces, metrics)
+
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Database: "Host=db;Port=5432;Database=product;Username=product;Password=product"
+      # OpenTelemetry: logs, traces and metrics to the Collector over OTLP/gRPC.
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      # Service discovery for other APIs. Point "inventory" at its container when you add one.
+      # Services__inventory__http__0: "http://inventory:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: product
+      POSTGRES_USER: product
+      POSTGRES_PASSWORD: product
+    ports:
+      - "5432:5432"
+    volumes:
+      # Local-dev schema only. Replace with the Liquibase template's changesets.
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product -d product"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Receives OTLP from the API and routes it: metrics -> Prometheus, everything -> Aspire dashboard.
+  # To use a different backend (Grafana Cloud, Datadog, New Relic, a cloud vendor...), change
+  # observability/otel-collector.yaml. The API doesn't change.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"     # OTLP/gRPC (the API running on the host sends here)
+      - "4318:4318"     # OTLP/HTTP
+    depends_on:
+      - prometheus
+      - dashboard
+
+  # Metrics store. Receives OTLP pushes from the Collector (no scraping needed): http://localhost:9090
+  prometheus:
+    image: prom/prometheus:v3.14.0
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-otlp-receiver"
+      - "--storage.tsdb.retention.time=7d"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+
+  # Metric dashboards, with Prometheus and the API dashboard pre-provisioned: http://localhost:3000
+  # Development only: anonymous admin, no login.
+  grafana:
+    image: grafana/grafana:13.1.3
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/api-overview.json
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # Local OpenTelemetry viewer (structured logs, traces, metrics): http://localhost:18888
+  # Development only. It keeps telemetry in memory and has no login.
+  dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "18888:18888"   # dashboard UI
+
+volumes:
+  prometheus-data:
+  grafana-data:

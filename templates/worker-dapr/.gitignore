@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.user
+drop/processing/
+drop/processed/
+drop/failed/
+drop/incoming/*
+!drop/incoming/.gitkeep

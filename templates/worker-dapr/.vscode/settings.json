@@ -1,0 +1,7 @@
+{
+  "dotnet.defaultSolution": "Company.Product.Worker.slnx",
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  }
+}

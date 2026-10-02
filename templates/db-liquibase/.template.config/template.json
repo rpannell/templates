@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Rodney Pannell",
+  "classifications": [
+    "Database",
+    "Liquibase",
+    "PostgreSQL"
+  ],
+  "identity": "CodingTemplates.Database.Liquibase",
+  "name": "Liquibase Database (PostgreSQL)",
+  "description": "Database schema as Liquibase changesets with up/down (rollback) scripts, release tags, a Docker image that runs the migrations, and a round-trip rollback test.",
+  "shortName": "db-liquibase",
+  "sourceName": "Company.Product.Database",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "SQL",
+    "type": "project"
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/*.csv",
+            ".vs/**",
+            "**/*.user",
+            ".template.config/**/*",
+            "**/*.filelist",
+            "**/*.lock.json",
+            "**/[Bb]in/**",
+            "**/[Oo]bj/**"
+          ]
+        }
+      ]
+    }
+  ]
+}

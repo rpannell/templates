@@ -1,0 +1,13 @@
+# Dapr sidecar configuration: send the sidecar's own traces to the same OpenTelemetry endpoint as the app, so a
+# message's trace covers broker -> sidecar -> function -> orders API.
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: worker-config
+spec:
+  tracing:
+    samplingRate: "1"
+    otel:
+      endpointAddress: "dashboard:18889"
+      isSecure: false
+      protocol: grpc

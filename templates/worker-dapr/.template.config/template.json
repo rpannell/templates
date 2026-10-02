@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Rodney Pannell",
+  "classifications": [
+    "Worker",
+    "Functions",
+    "Dapr",
+    "iDesign"
+  ],
+  "identity": "CodingTemplates.Worker.Dapr",
+  "name": "Dapr Worker (Functions-style: event, file)",
+  "description": "Cloud-agnostic, Azure Functions-style worker on Dapr: event (RabbitMQ, Kafka, Event Hubs, Service Bus, SQS, Pub/Sub) and file (drop folder + object storage) functions with iDesign layers. Scheduled jobs live in the scheduler-dapr template.",
+  "shortName": "worker-dapr",
+  "sourceName": "Company.Product.Worker",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/[Bb]in/**",
+            "**/[Oo]bj/**",
+            ".vs/**",
+            "**/*.user",
+            "drop/processing/**",
+            "drop/processed/**",
+            "drop/failed/**",
+            ".template.config/**/*",
+            "**/*.filelist",
+            "**/*.lock.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

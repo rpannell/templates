@@ -1,0 +1,109 @@
+{
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "tag",
+      "type": "promptString",
+      "description": "Roll back to this tag (everything applied after it is undone)",
+      "default": "baseline"
+    },
+    {
+      "id": "count",
+      "type": "promptString",
+      "description": "Number of changesets to roll back",
+      "default": "1"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "docker: build + checks",
+      "detail": "Build the migration image. Fails on a missing rollback, a duplicate id, an orphan file or an invalid changelog",
+      "type": "shell",
+      "command": "docker compose build migrate",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "db: up",
+      "detail": "Start PostgreSQL on localhost:5432",
+      "type": "shell",
+      "command": "docker compose up -d --wait db",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "migrate: update (up)",
+      "detail": "Apply every pending changeset, including dev sample data",
+      "type": "shell",
+      "command": "docker compose up -d --wait db; docker compose run --rm --build migrate update",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "migrate: status",
+      "detail": "List pending changesets",
+      "type": "shell",
+      "command": "docker compose run --rm migrate status --verbose",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "migrate: history",
+      "detail": "List applied changesets",
+      "type": "shell",
+      "command": "docker compose run --rm migrate history",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "migrate: preview update SQL",
+      "detail": "Print the SQL that update would run, without running it",
+      "type": "shell",
+      "command": "docker compose run --rm --build migrate update-sql",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "migrate: rollback to tag (down)",
+      "detail": "Undo every changeset applied after a tag",
+      "type": "shell",
+      "command": "docker compose run --rm migrate rollback --tag=${input:tag}",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "migrate: preview rollback SQL",
+      "detail": "Print the SQL a rollback to a tag would run, without running it",
+      "type": "shell",
+      "command": "docker compose run --rm migrate rollback-sql --tag=${input:tag}",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "migrate: rollback count (down)",
+      "detail": "Undo the last N changesets",
+      "type": "shell",
+      "command": "docker compose run --rm migrate rollback-count --count=${input:count}",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "verify: round trip",
+      "detail": "Up, down to baseline, up again on a throwaway database",
+      "type": "shell",
+      "command": "docker compose --profile verify run --rm --build verify; docker compose --profile verify rm -sf verify-db",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "db: reset",
+      "detail": "Delete the local database and apply everything again",
+      "type": "shell",
+      "command": "docker compose down -v; docker compose up -d --wait db; docker compose run --rm --build migrate update",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}

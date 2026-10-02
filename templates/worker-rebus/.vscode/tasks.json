@@ -1,0 +1,59 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/Company.Product.Worker.slnx", "/property:GenerateFullPaths=true", "/consoleloggerparameters:NoSummary"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["test", "${workspaceFolder}/Company.Product.Worker.slnx"],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "deps: up",
+      "detail": "RabbitMQ (:15672) and the telemetry dashboard (:18888)",
+      "type": "shell",
+      "command": "docker compose up -d --wait",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "deps: down",
+      "detail": "Stop every container of this project",
+      "type": "shell",
+      "command": "docker compose --profile container down",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "deps up + build",
+      "dependsOrder": "sequence",
+      "dependsOn": ["deps: up", "build"],
+      "problemMatcher": []
+    },
+    {
+      "label": "compose: up (all in containers)",
+      "detail": "Worker image + RabbitMQ + dashboard. Worker health on :8080",
+      "type": "shell",
+      "command": "docker compose --profile container up --build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "docker: build + test",
+      "detail": "Same build CI runs: compile, all tests, runtime image",
+      "type": "shell",
+      "command": "docker build -t company-product-worker .",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}

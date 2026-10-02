@@ -1,0 +1,4 @@
+# Offline-mode tracking file written by update-sql --url=offline:...
+databasechangelog.csv
+.vs/
+*.user

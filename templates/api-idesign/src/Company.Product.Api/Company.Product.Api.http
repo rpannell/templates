@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:5080
+
+### Create an order
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "Contoso",
+  "lines": [
+    { "sku": "WIDGET-1", "quantity": 10, "unitPrice": 25.00 },
+    { "sku": "GADGET-2", "quantity": 3, "unitPrice": 99.99 }
+  ]
+}
+
+### List orders
+GET {{baseUrl}}/api/orders?skip=0&take=20
+
+### Get one order (paste an id from the create response)
+GET {{baseUrl}}/api/orders/00000000-0000-0000-0000-000000000000
+
+### Health
+GET {{baseUrl}}/health
+
+### Check stock for an order (needs the inventory service; see Services:inventory in appsettings.Development.json)
+GET {{baseUrl}}/api/orders/00000000-0000-0000-0000-000000000000/availability

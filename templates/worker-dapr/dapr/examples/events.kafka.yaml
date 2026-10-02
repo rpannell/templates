@@ -1,0 +1,16 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: events
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+    - name: brokers
+      value: "kafka:9092"
+    - name: consumerGroup
+      value: "worker"
+    - name: authType
+      value: "none"              # password, mtls, oidc... in production
+    - name: initialOffset
+      value: "oldest"

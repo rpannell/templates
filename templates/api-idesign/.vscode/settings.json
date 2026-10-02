@@ -1,0 +1,10 @@
+{
+  "dotnet.defaultSolution": "Company.Product.slnx",
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  },
+  "rest-client.environmentVariables": {
+    "$shared": {}
+  }
+}

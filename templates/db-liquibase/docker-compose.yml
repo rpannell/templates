@@ -1,0 +1,72 @@
+# Local database + migrations. The API template's compose file uses the same database name and credentials.
+#
+#   docker compose up -d --wait db                     start PostgreSQL
+#   docker compose run --rm migrate                    up: apply pending changesets (with dev sample data)
+#   docker compose run --rm migrate status --verbose   what's pending
+#   docker compose run --rm migrate rollback --tag=baseline   down: undo everything
+#   docker compose --profile verify run --rm verify    round-trip test on a throwaway database
+
+x-liquibase: &liquibase
+  build: .
+  image: company-product-database:local
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: product
+      POSTGRES_USER: product
+      POSTGRES_PASSWORD: product
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product -d product"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Runs "update" by default. Pass another Liquibase command to override it.
+  migrate:
+    <<: *liquibase
+    environment:
+      LIQUIBASE_COMMAND_URL: "jdbc:postgresql://db:5432/product"
+      LIQUIBASE_COMMAND_USERNAME: product
+      LIQUIBASE_COMMAND_PASSWORD: product
+      LIQUIBASE_COMMAND_CONTEXT_FILTER: dev      # include local sample data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Throwaway database for the round-trip test (in memory, discarded on stop).
+  verify-db:
+    image: postgres:17
+    profiles: ["verify"]
+    environment:
+      POSTGRES_DB: verify
+      POSTGRES_USER: verify
+      POSTGRES_PASSWORD: verify
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verify -d verify"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  verify:
+    <<: *liquibase
+    profiles: ["verify"]
+    entrypoint: ["sh", "/liquibase/scripts/verify-rollback.sh"]
+    environment:
+      LIQUIBASE_COMMAND_URL: "jdbc:postgresql://verify-db:5432/verify"
+      LIQUIBASE_COMMAND_USERNAME: verify
+      LIQUIBASE_COMMAND_PASSWORD: verify
+      LIQUIBASE_COMMAND_CONTEXT_FILTER: dev      # test every changeset, including dev data
+    depends_on:
+      verify-db:
+        condition: service_healthy
+
+volumes:
+  db-data:

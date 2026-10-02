@@ -1,0 +1,24 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: events
+spec:
+  type: pubsub.azure.eventhubs
+  version: v1
+  metadata:
+    # Managed identity: use eventHubNamespace + azureClientId instead of a connection string.
+    - name: connectionString
+      secretKeyRef:
+        name: eventhubs
+        key: connectionString
+    - name: consumerGroup
+      value: "worker"
+    # Checkpoints (how far each partition has been read) are stored in a storage account.
+    - name: storageAccountName
+      value: "<storage-account>"
+    - name: storageContainerName
+      value: "worker-checkpoints"
+    - name: storageAccountKey
+      secretKeyRef:
+        name: eventhubs
+        key: storageAccountKey

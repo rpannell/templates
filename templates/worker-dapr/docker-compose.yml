@@ -1,0 +1,97 @@
+# Local stack for the worker. Two ways to run it:
+#
+#   F5 in VS Code (debug):  docker compose --profile debug up -d --wait
+#     RabbitMQ + telemetry dashboard + a Dapr sidecar that calls the worker running on your machine (port 5100).
+#
+#   All in containers:      docker compose --profile container up --build
+#     RabbitMQ + telemetry dashboard + the worker image + its Dapr sidecar.
+#
+# The orders API runs separately (its own template, F5 or compose) on http://localhost:5080.
+
+x-daprd: &daprd
+  image: daprio/daprd:1.18.0
+  volumes:
+    - ./dapr:/dapr:ro
+    # Files for the local object-storage binding (lives in the sidecar). tmpfs: cleared on restart.
+    - type: tmpfs
+      target: /data/object-storage
+      tmpfs:
+        mode: 01777
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # management UI: http://localhost:15672 (guest / guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Local OpenTelemetry viewer (logs, traces, metrics): http://localhost:18888
+  dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "18888:18888"   # dashboard UI
+      - "4317:18889"    # OTLP/gRPC from the worker running on the host
+
+  # ---- debug profile: sidecar for the worker you run with F5 ----
+  dapr:
+    <<: *daprd
+    profiles: ["debug"]
+    command:
+      - ./daprd
+      - --app-id=worker
+      - --app-port=5100
+      - --app-channel-address=host.docker.internal
+      - --dapr-http-port=3500
+      - --dapr-grpc-port=50001
+      - --resources-path=/dapr/components
+      - --config=/dapr/config.yaml
+    ports:
+      - "3500:3500"     # Dapr HTTP API (samples/requests.http)
+      - "50001:50001"   # Dapr gRPC API (DaprClient in the worker)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # ---- container profile: the worker image and its sidecar ----
+  worker:
+    build: .
+    profiles: ["container"]
+    ports:
+      - "8080:8080"
+      - "3500:3500"     # the sidecar shares this container's network, so its ports are published here
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://dashboard:18889"
+      Services__orders-api__http__0: "http://host.docker.internal:5080"
+      FileProcessing__DropFolder__Path: /data/drop
+    volumes:
+      - ./drop:/data/drop
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  worker-dapr:
+    <<: *daprd
+    profiles: ["container"]
+    command:
+      - ./daprd
+      - --app-id=worker
+      - --app-port=8080
+      - --dapr-http-port=3500
+      - --dapr-grpc-port=50001
+      - --resources-path=/dapr/components
+      - --config=/dapr/config.yaml
+    network_mode: "service:worker"
+    depends_on:
+      - worker

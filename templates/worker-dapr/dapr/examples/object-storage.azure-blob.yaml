@@ -1,0 +1,20 @@
+# Azure Blob Storage. Set FileProcessing__ObjectStorage__KeyMetadataName=blobName.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: object-storage
+spec:
+  type: bindings.azure.blobstorage
+  version: v1
+  metadata:
+    - name: accountName
+      value: "<storage-account>"
+    - name: containerName
+      value: "imports"
+    # Managed identity: add azureClientId and omit accountKey.
+    - name: accountKey
+      secretKeyRef:
+        name: storage
+        key: accountKey
+    - name: direction
+      value: "output"

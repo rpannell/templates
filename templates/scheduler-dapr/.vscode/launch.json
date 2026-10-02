@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Scheduler + Dapr (Docker)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "deps up + build",
+      "program": "${workspaceFolder}/src/Company.Product.Scheduler/bin/Debug/net10.0/Company.Product.Scheduler.dll",
+      "cwd": "${workspaceFolder}/src/Company.Product.Scheduler",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5200"
+      }
+    },
+    {
+      "name": "Scheduler only (sidecar already running)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Company.Product.Scheduler/bin/Debug/net10.0/Company.Product.Scheduler.dll",
+      "cwd": "${workspaceFolder}/src/Company.Product.Scheduler",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5200"
+      }
+    },
+    {
+      "name": "Attach to process",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
+}

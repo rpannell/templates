@@ -1,0 +1,68 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/Company.Product.Scheduler.slnx", "/property:GenerateFullPaths=true", "/consoleloggerparameters:NoSummary"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["test", "${workspaceFolder}/Company.Product.Scheduler.slnx"],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "deps: up",
+      "detail": "Telemetry dashboard (:18888) and a Dapr sidecar with the cron schedules, calling the scheduler on :5200",
+      "type": "shell",
+      "command": "docker compose --profile debug up -d --wait",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "deps: down",
+      "detail": "Stop every container of this project",
+      "type": "shell",
+      "command": "docker compose --profile debug --profile container down",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "deps up + build",
+      "dependsOrder": "sequence",
+      "dependsOn": ["deps: up", "build"],
+      "problemMatcher": []
+    },
+    {
+      "label": "dapr: sidecar logs",
+      "detail": "Follow the sidecar's log: schedule registrations and each trigger",
+      "type": "shell",
+      "command": "docker compose logs -f dapr",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "compose: up (all in containers)",
+      "detail": "Scheduler image + sidecar + dashboard. Scheduler on :8081",
+      "type": "shell",
+      "command": "docker compose --profile container up --build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "docker: build + test",
+      "detail": "Same build CI runs: compile, all tests, runtime image",
+      "type": "shell",
+      "command": "docker build -t company-product-scheduler .",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}

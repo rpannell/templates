@@ -1,0 +1,20 @@
+# Amazon S3 or any S3-compatible store. Keep FileProcessing__ObjectStorage__KeyMetadataName=key (the default).
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: object-storage
+spec:
+  type: bindings.aws.s3
+  version: v1
+  metadata:
+    - name: bucket
+      value: "imports"
+    - name: region
+      value: "us-east-1"
+    # For S3-compatible stores: endpoint + forcePathStyle "true".
+    # - name: endpoint
+    #   value: "http://rustfs:9000"
+    # - name: forcePathStyle
+    #   value: "true"
+    - name: direction
+      value: "output"

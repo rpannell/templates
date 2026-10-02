@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: events
+spec:
+  type: pubsub.aws.snssqs
+  version: v1
+  metadata:
+    - name: region
+      value: "us-east-1"
+    # Credentials come from IRSA / EKS Pod Identity / the task role when accessKey and secretKey are omitted.
+    - name: messageReceiveLimit
+      value: "5"
+    - name: sqsDeadLettersQueueName
+      value: "worker-dead-letters"

@@ -1,0 +1,53 @@
+# Production cron schedules. Apply to the namespace the scheduler runs in:
+#   kubectl apply -n <namespace> -f deploy/kubernetes/components.yaml
+#
+# All schedules are evaluated in UTC (the sidecar's clock). 6 fields, with seconds:
+#   second minute hour day-of-month month day-of-week
+#
+# "scopes" limits each component to the scheduler app. Without it, EVERY Dapr app in the namespace (the worker, the
+# API) would load these schedules and call routes it doesn't have.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: daily-sales-summary
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+    - name: schedule
+      value: "0 0 6 * * *"            # 06:00:00 UTC every day
+    - name: direction
+      value: "input"
+    - name: route
+      value: "/jobs/daily-sales-summary"
+scopes:
+  - scheduler
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: orders-api-health
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+    - name: schedule
+      value: "0 */5 * * * *"          # second 0 of every 5th minute
+    - name: direction
+      value: "input"
+    - name: route
+      value: "/jobs/orders-api-health"
+scopes:
+  - scheduler
+---
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: scheduler-config
+spec:
+  tracing:
+    samplingRate: "1"
+    otel:
+      endpointAddress: "otel-collector.observability:4317"
+      isSecure: false
+      protocol: grpc

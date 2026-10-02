@@ -1,0 +1,57 @@
+# The scheduler: EXACTLY ONE pod, ALWAYS.
+#   replicas: 1        -> every pod's sidecar fires every schedule, so 2 pods = every job runs twice
+#   strategy: Recreate -> during a rollout the old pod stops BEFORE the new one starts (a RollingUpdate would run
+#                         both for a moment, and a schedule that fires then would run twice)
+#   no HPA / KEDA      -> never autoscale this Deployment
+#
+#   kubectl apply -n <namespace> -f deploy/kubernetes/scheduler.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-scheduler
+  labels: { app: product-scheduler }
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: product-scheduler }
+  template:
+    metadata:
+      labels: { app: product-scheduler }
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "scheduler"            # must match "scopes" in components.yaml
+        dapr.io/app-port: "8080"
+        dapr.io/config: "scheduler-config"
+        dapr.io/sidecar-cpu-request: "50m"
+        dapr.io/sidecar-memory-request: "32Mi"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      terminationGracePeriodSeconds: 60        # lets a running job finish before the pod is killed
+      containers:
+        - name: scheduler
+          image: <registry>/company-product-scheduler:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.observability:4317"
+            - name: OTEL_SERVICE_NAME
+              value: "product-scheduler"
+            # Service discovery: "orders-api" resolves through cluster DNS when the Service has that name.
+            # Otherwise point it at the right host:
+            # - name: Services__orders-api__http__0
+            #   value: "http://product-api:8080"
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }

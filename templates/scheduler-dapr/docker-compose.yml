@@ -1,0 +1,65 @@
+# Local stack for the scheduler. There's no broker: a cron binding needs nothing but the Dapr sidecar.
+#
+#   F5 in VS Code (debug):  docker compose --profile debug up -d --wait
+#     Telemetry dashboard + a Dapr sidecar that calls the scheduler running on your machine (port 5200).
+#
+#   All in containers:      docker compose --profile container up --build
+#     Telemetry dashboard + the scheduler image + its Dapr sidecar.
+#
+# The orders API runs separately (its own template) on http://localhost:5080.
+# The dashboard uses the same ports as the API and worker stacks, so run one dashboard at a time (see README).
+
+x-daprd: &daprd
+  image: daprio/daprd:1.18.0
+  volumes:
+    - ./dapr:/dapr:ro
+
+services:
+  # Local OpenTelemetry viewer (logs, traces, metrics): http://localhost:18888
+  dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "18888:18888"   # dashboard UI
+      - "4317:18889"    # OTLP/gRPC from the scheduler running on the host
+
+  # ---- debug profile: sidecar for the scheduler you run with F5 ----
+  dapr:
+    <<: *daprd
+    profiles: ["debug"]
+    command:
+      - ./daprd
+      - --app-id=scheduler
+      - --app-port=5200
+      - --app-channel-address=host.docker.internal
+      - --resources-path=/dapr/components
+      - --config=/dapr/config.yaml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ---- container profile: the scheduler image and its sidecar ----
+  scheduler:
+    build: .
+    profiles: ["container"]
+    ports:
+      - "8081:8080"     # :8081 on the host, so it doesn't clash with the worker's :8080
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://dashboard:18889"
+      Services__orders-api__http__0: "http://host.docker.internal:5080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  scheduler-dapr:
+    <<: *daprd
+    profiles: ["container"]
+    command:
+      - ./daprd
+      - --app-id=scheduler
+      - --app-port=8080
+      - --resources-path=/dapr/components
+      - --config=/dapr/config.yaml
+    network_mode: "service:scheduler"
+    depends_on:
+      - scheduler

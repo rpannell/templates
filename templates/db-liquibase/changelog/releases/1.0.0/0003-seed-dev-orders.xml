@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Sample data for local development only. context="dev" keeps it out of every other environment. -->
+    <changeSet id="0003-seed-dev-orders" author="product" context="dev">
+        <comment>Two sample orders so the API returns data on a fresh local database.</comment>
+        <insert tableName="orders">
+            <column name="id" value="0192f0a0-0000-7000-8000-000000000001"/>
+            <column name="customer_name" value="Contoso"/>
+            <column name="subtotal" valueNumeric="549.97"/>
+            <column name="discount" valueNumeric="27.50"/>
+            <column name="total" valueNumeric="522.47"/>
+            <column name="created_at" valueDate="2026-01-15T12:00:00"/>
+        </insert>
+        <insert tableName="order_lines">
+            <column name="order_id" value="0192f0a0-0000-7000-8000-000000000001"/>
+            <column name="line_number" valueNumeric="1"/>
+            <column name="sku" value="WIDGET-1"/>
+            <column name="quantity" valueNumeric="10"/>
+            <column name="unit_price" valueNumeric="25.00"/>
+            <column name="line_total" valueNumeric="250.00"/>
+        </insert>
+        <insert tableName="order_lines">
+            <column name="order_id" value="0192f0a0-0000-7000-8000-000000000001"/>
+            <column name="line_number" valueNumeric="2"/>
+            <column name="sku" value="GADGET-2"/>
+            <column name="quantity" valueNumeric="3"/>
+            <column name="unit_price" valueNumeric="99.99"/>
+            <column name="line_total" valueNumeric="299.97"/>
+        </insert>
+        <insert tableName="orders">
+            <column name="id" value="0192f0a0-0000-7000-8000-000000000002"/>
+            <column name="customer_name" value="Fabrikam"/>
+            <column name="subtotal" valueNumeric="40.00"/>
+            <column name="discount" valueNumeric="0.00"/>
+            <column name="total" valueNumeric="40.00"/>
+            <column name="created_at" valueDate="2026-01-16T09:30:00"/>
+        </insert>
+        <insert tableName="order_lines">
+            <column name="order_id" value="0192f0a0-0000-7000-8000-000000000002"/>
+            <column name="line_number" valueNumeric="1"/>
+            <column name="sku" value="WIDGET-1"/>
+            <column name="quantity" valueNumeric="4"/>
+            <column name="unit_price" valueNumeric="10.00"/>
+            <column name="line_total" valueNumeric="40.00"/>
+        </insert>
+        <rollback>
+            <!-- order_lines rows go with their orders (ON DELETE CASCADE). -->
+            <delete tableName="orders">
+                <where>id IN ('0192f0a0-0000-7000-8000-000000000001', '0192f0a0-0000-7000-8000-000000000002')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,22 @@
+# Retries for messages the functions fail to handle (non-2xx). After the last retry, pub/sub messages go to the
+# dead-letter queue and binding messages are redelivered by the broker.
+apiVersion: dapr.io/v1alpha1
+kind: Resiliency
+metadata:
+  name: worker-resiliency
+spec:
+  policies:
+    retries:
+      functionRetry:
+        policy: exponential
+        initialInterval: 1s
+        maxInterval: 30s
+        maxRetries: 5
+  targets:
+    components:
+      events:
+        inbound:
+          retry: functionRetry
+      object-created:
+        inbound:
+          retry: functionRetry

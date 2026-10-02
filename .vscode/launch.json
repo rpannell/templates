@@ -1,0 +1,46 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API + Postgres + Telemetry (Docker)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "deps up + build",
+      "program": "${workspaceFolder}/templates/api-idesign/src/Company.Product.Api/bin/Debug/net10.0/Company.Product.Api.dll",
+      "cwd": "${workspaceFolder}/templates/api-idesign/src/Company.Product.Api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5080"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/scalar"
+      }
+    },
+    {
+      "name": "API only (dependencies already running)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/templates/api-idesign/src/Company.Product.Api/bin/Debug/net10.0/Company.Product.Api.dll",
+      "cwd": "${workspaceFolder}/templates/api-idesign/src/Company.Product.Api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5080"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/scalar"
+      }
+    },
+    {
+      "name": "Attach to process",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
+}

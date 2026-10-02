@@ -1,0 +1,4 @@
+order_ref,customer_name,sku,quantity,unit_price
+A-1001,Contoso,WIDGET-1,10,25.00
+A-1001,Contoso,GADGET-2,3,99.99
+A-1002,Fabrikam,WIDGET-1,4,10.00

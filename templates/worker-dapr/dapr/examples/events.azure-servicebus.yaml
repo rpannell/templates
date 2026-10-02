@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: events
+spec:
+  type: pubsub.azure.servicebus.topics
+  version: v1
+  metadata:
+    # Managed identity: use namespaceName + azureClientId instead of a connection string.
+    - name: connectionString
+      secretKeyRef:
+        name: servicebus
+        key: connectionString
+    - name: maxDeliveryCount
+      value: "5"

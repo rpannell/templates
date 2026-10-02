@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "ms-dotnettools.csdevkit",
+    "ms-azuretools.vscode-containers",
+    "humao.rest-client",
+    "editorconfig.editorconfig"
+  ]
+}

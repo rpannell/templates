@@ -1,0 +1,47 @@
+# Local stack for the worker. Two ways to run it:
+#
+#   F5 in VS Code (debug):  docker compose up -d --wait
+#     RabbitMQ + telemetry dashboard. The worker runs on your machine (http://localhost:5100).
+#
+#   All in containers:      docker compose --profile container up --build
+#     RabbitMQ + telemetry dashboard + the worker image.
+#
+# The orders API runs separately (its own template, F5 or compose) on http://localhost:5080.
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # management UI: http://localhost:15672 (guest / guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Local OpenTelemetry viewer (logs, traces, metrics): http://localhost:18888
+  dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "18888:18888"   # dashboard UI
+      - "4317:18889"    # OTLP/gRPC from the worker running on the host
+
+  # ---- container profile: the worker image ----
+  worker:
+    build: .
+    profiles: ["container"]
+    ports:
+      - "8080:8080"     # /health and /metrics
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Messaging__ConnectionString: "amqp://guest:guest@rabbitmq:5672"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://dashboard:18889"
+      Services__orders-api__http__0: "http://host.docker.internal:5080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy

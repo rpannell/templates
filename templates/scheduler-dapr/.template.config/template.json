@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Rodney Pannell",
+  "classifications": [ "Worker", "Scheduler", "Cron", "Dapr", "iDesign" ],
+  "identity": "CodingTemplates.Scheduler.Dapr",
+  "name": "Dapr Scheduler (cron jobs)",
+  "description": "Cloud-agnostic scheduled jobs (cron) on Dapr: single-replica app with overlap protection, run metrics and iDesign layers. Companion to the worker-dapr template.",
+  "shortName": "scheduler-dapr",
+  "sourceName": "Company.Product.Scheduler",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [ "**/[Bb]in/**", "**/[Oo]bj/**", ".vs/**", "**/*.user", ".template.config/**/*", "**/*.filelist", "**/*.lock.json", "_moved/**" ]
+        }
+      ]
+    }
+  ]
+}

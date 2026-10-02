@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5100",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DAPR_HTTP_PORT": "3500",
+        "DAPR_GRPC_PORT": "50001"
+      }
+    }
+  }
+}

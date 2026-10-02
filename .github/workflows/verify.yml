@@ -1,0 +1,52 @@
+name: verify
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  api-idesign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test template source
+        run: docker build templates/api-idesign
+
+  worker-dapr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test template source
+        run: docker build templates/worker-dapr
+
+  worker-rebus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test template source
+        run: docker build templates/worker-rebus
+
+  scheduler-dapr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test template source
+        run: docker build templates/scheduler-dapr
+
+  db-liquibase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build migration image (changelog checks)
+        run: docker build templates/db-liquibase
+      - name: Round trip (up, down to baseline, up)
+        working-directory: templates/db-liquibase
+        run: docker compose --profile verify run --rm --build verify
+
+  generated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pack, install, generate, build and test
+        run: docker build -f Dockerfile.verify .

@@ -1,0 +1,23 @@
+# EVENT source for pub/sub functions (OrderPlacedFunction). Locally: RabbitMQ.
+# To use Kafka, Azure Event Hubs, Azure Service Bus, AWS SNS/SQS or GCP Pub/Sub, replace this file with one
+# from dapr/examples/ and keep the name "events". The code doesn't change.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: events
+spec:
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+    - name: connectionString
+      value: "amqp://guest:guest@rabbitmq:5672"
+    - name: durable                 # queues survive a broker restart
+      value: "true"
+    - name: deletedWhenUnused
+      value: "false"
+    - name: deliveryMode            # 2 = persistent messages
+      value: "2"
+    - name: enableDeadLetter        # messages that exhaust retries or are DROPped go to a dead-letter queue
+      value: "true"
+    - name: prefetchCount           # at most N unacknowledged messages per replica
+      value: "10"

@@ -1,0 +1,3 @@
+order_ref,customer_name,sku,quantity,unit_price
+A-2001,Contoso,WIDGET-1,0,25.00
+A-2002,,GADGET-2,1,abc

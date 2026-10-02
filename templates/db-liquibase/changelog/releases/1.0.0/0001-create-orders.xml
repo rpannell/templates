@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="0001-create-orders" author="product">
+        <comment>Orders placed through the API.</comment>
+        <createTable tableName="orders">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" primaryKeyName="pk_orders" nullable="false"/>
+            </column>
+            <column name="customer_name" type="varchar(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subtotal" type="decimal(18, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="discount" type="decimal(18, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total" type="decimal(18, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp with time zone">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="orders"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="0001-index-orders-created-at" author="product">
+        <comment>Newest-first listing (GET /api/orders).</comment>
+        <createIndex tableName="orders" indexName="ix_orders_created_at">
+            <column name="created_at" descending="true"/>
+        </createIndex>
+        <rollback>
+            <dropIndex tableName="orders" indexName="ix_orders_created_at"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

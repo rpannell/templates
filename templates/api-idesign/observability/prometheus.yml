@@ -1,0 +1,30 @@
+# Prometheus receives metrics by OTLP push from the OpenTelemetry Collector (--web.enable-otlp-receiver).
+# job = service.name (for example Company.Product.Api), instance = service.instance.id.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+otlp:
+  # Copy these resource attributes onto every series so they can be filtered in PromQL.
+  promote_resource_attributes:
+    - service.name
+    - service.namespace
+    - service.version
+    - service.instance.id
+    - deployment.environment.name
+    - k8s.namespace.name
+    - k8s.pod.name
+
+storage:
+  tsdb:
+    # OTLP pushes can arrive slightly out of order.
+    out_of_order_time_window: 30m
+
+# Locally, metrics arrive by OTLP push, so nothing is scraped (scraping too would duplicate every series).
+# The API also exposes the same metrics at /metrics. To try pull mode instead, remove the otlp_http/prometheus
+# exporter from otel-collector.yaml and uncomment this job:
+scrape_configs: []
+#  - job_name: Company.Product.Api
+#    metrics_path: /metrics
+#    static_configs:
+#      - targets: ["host.docker.internal:5080"]   # API on the host (F5); use api:8080 for compose: up

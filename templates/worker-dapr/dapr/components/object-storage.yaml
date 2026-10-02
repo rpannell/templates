@@ -1,0 +1,13 @@
+# Where ObjectCreatedFunction reads files from (the binding's "get" operation).
+# Locally: files in the sidecar's /data/object-storage (metadata key "fileName").
+# In the cloud: S3, Azure Blob or GCS (see dapr/examples/), and set FileProcessing__ObjectStorage__KeyMetadataName.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: object-storage
+spec:
+  type: bindings.localstorage
+  version: v1
+  metadata:
+    - name: rootPath
+      value: "/data/object-storage"
